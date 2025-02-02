@@ -1,140 +1,197 @@
-from keras.layers import Input, concatenate
-from keras.layers.advanced_activations import LeakyReLU
-from keras.layers.convolutional import Convolution2D
-from keras.layers.core import Dropout, Dense, Flatten, Lambda
-from keras.layers.merge import Average
-from keras.layers.normalization import BatchNormalization
-from keras.models import Model
-from keras.utils.vis_utils import plot_model
+import torch
+import torch.nn as nn
 
-# the paper defined hyper-parameter:chr
+# Constants
 channel_rate = 64
-# Note the image_shape must be multiple of patch_shape
 image_shape = (256, 256, 3)
 patch_shape = (channel_rate, channel_rate, 3)
 
 
-# Dense Block
-def dense_block(inputs, dilation_factor=None):
-    x = LeakyReLU(alpha=0.2)(inputs)
-    x = Convolution2D(filters=4 * channel_rate, kernel_size=(1, 1), padding='same')(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=0.2)(x)
-    # the 3 × 3 convolutions along the dense field are alternated between ‘spatial’ convolution
-    # and ‘dilated’ convolution with linearly increasing dilation factor
-    if dilation_factor is not None:
-        x = Convolution2D(filters=channel_rate, kernel_size=(3, 3), padding='same',
-                          dilation_rate=dilation_factor)(x)
-    else:
-        x = Convolution2D(filters=channel_rate, kernel_size=(3, 3), padding='same')(x)
-    x = BatchNormalization()(x)
-    # add Gaussian noise
-    x = Dropout(rate=0.5)(x)
-    return x
+class DenseBlock(nn.Module):
+    def __init__(self, in_channels, dilation_factor=None):
+        super(DenseBlock, self).__init__()
+        self.leaky_relu = nn.LeakyReLU(0.2)
+        self.conv1 = nn.Conv2d(in_channels, 4 * channel_rate, 1, padding=0)
+        self.bn1 = nn.BatchNorm2d(4 * channel_rate)
+
+        if dilation_factor is not None:
+            self.conv2 = nn.Conv2d(4 * channel_rate, channel_rate, 3,
+                                   padding=dilation_factor, dilation=dilation_factor)
+        else:
+            self.conv2 = nn.Conv2d(4 * channel_rate, channel_rate, 3, padding=1)
+
+        self.bn2 = nn.BatchNorm2d(channel_rate)
+        self.dropout = nn.Dropout(0.5)
+
+    def forward(self, x):
+        out = self.leaky_relu(x)
+        out = self.conv1(out)
+        out = self.bn1(out)
+        out = self.leaky_relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.dropout(out)
+        return out
 
 
-def generator_model():
-    # Input Image, Note the shape is variable
-    inputs = Input(shape=(None, None, 3))
-    # The Head
-    h = Convolution2D(filters=4 * channel_rate, kernel_size=(3, 3), padding='same')(inputs)
+class Generator(nn.Module):
+    def __init__(self):
+        super(Generator, self).__init__()
+        # The Head
+        self.head = nn.Conv2d(3, 4 * channel_rate, 3, padding=1)
 
-    # The Dense Field
-    d_1 = dense_block(inputs=h)
-    x = concatenate([h, d_1])
-    # the paper used dilated convolution at every even numbered layer within the dense field
-    d_2 = dense_block(inputs=x, dilation_factor=(1, 1))
-    x = concatenate([x, d_2])
-    d_3 = dense_block(inputs=x)
-    x = concatenate([x, d_3])
-    d_4 = dense_block(inputs=x, dilation_factor=(2, 2))
-    x = concatenate([x, d_4])
-    d_5 = dense_block(inputs=x)
-    x = concatenate([x, d_5])
-    d_6 = dense_block(inputs=x, dilation_factor=(3, 3))
-    x = concatenate([x, d_6])
-    d_7 = dense_block(inputs=x)
-    x = concatenate([x, d_7])
-    d_8 = dense_block(inputs=x, dilation_factor=(2, 2))
-    x = concatenate([x, d_8])
-    d_9 = dense_block(inputs=x)
-    x = concatenate([x, d_9])
-    d_10 = dense_block(inputs=x, dilation_factor=(1, 1))
-    # The Tail
-    x = LeakyReLU(alpha=0.2)(d_10)
-    x = Convolution2D(filters=4 * channel_rate, kernel_size=(1, 1), padding='same')(x)
-    x = BatchNormalization()(x)
+        # The Dense Field
+        # Calculate input channels for each dense block
+        self.dense1 = DenseBlock(4 * channel_rate)  # Input from head
+        self.dense2 = DenseBlock(5 * channel_rate, dilation_factor=1)  # Previous + channel_rate
+        self.dense3 = DenseBlock(6 * channel_rate)
+        self.dense4 = DenseBlock(7 * channel_rate, dilation_factor=2)
+        self.dense5 = DenseBlock(8 * channel_rate)
+        self.dense6 = DenseBlock(9 * channel_rate, dilation_factor=3)
+        self.dense7 = DenseBlock(10 * channel_rate)
+        self.dense8 = DenseBlock(11 * channel_rate, dilation_factor=2)
+        self.dense9 = DenseBlock(12 * channel_rate)
+        self.dense10 = DenseBlock(13 * channel_rate, dilation_factor=1)
 
-    # The Global Skip Connection
-    x = concatenate([h, x])
-    x = Convolution2D(filters=channel_rate, kernel_size=(3, 3), padding='same')(x)
-    # PReLU can't be used, because it is connected with the input shape
-    # x = PReLU()(x)
-    x = LeakyReLU(alpha=0.2)(x)
+        # The Tail
+        self.tail_leaky = nn.LeakyReLU(0.2)
+        self.tail_conv1 = nn.Conv2d(14 * channel_rate, 4 * channel_rate, 1)
+        self.tail_bn = nn.BatchNorm2d(4 * channel_rate)
 
-    # Output Image
-    outputs = Convolution2D(filters=3, kernel_size=(3, 3), padding='same', activation='tanh')(x)
-    model = Model(inputs=inputs, outputs=outputs, name='Generator')
-    return model
+        # Final layers
+        self.final_conv = nn.Conv2d(8 * channel_rate, channel_rate, 3, padding=1)  # 4*channel_rate + 4*channel_rate
+        self.final_leaky = nn.LeakyReLU(0.2)
+        self.output_conv = nn.Conv2d(channel_rate, 3, 3, padding=1)
 
+    def forward(self, x):
+        # Head
+        h = self.head(x)
 
-def discriminator_model():
-    # PatchGAN
-    inputs = Input(shape=patch_shape)
-    x = Convolution2D(filters=channel_rate, kernel_size=(3, 3), strides=(2, 2), padding="same")(inputs)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=0.2)(x)
+        # Dense field with concatenations
+        x1 = self.dense1(h)
+        c1 = torch.cat([h, x1], dim=1)
 
-    x = Convolution2D(filters=2 * channel_rate, kernel_size=(3, 3), strides=(2, 2), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=0.2)(x)
+        x2 = self.dense2(c1)
+        c2 = torch.cat([c1, x2], dim=1)
 
-    x = Convolution2D(filters=4 * channel_rate, kernel_size=(3, 3), strides=(2, 2), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=0.2)(x)
+        x3 = self.dense3(c2)
+        c3 = torch.cat([c2, x3], dim=1)
 
-    x = Convolution2D(filters=4 * channel_rate, kernel_size=(3, 3), strides=(2, 2), padding="same")(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=0.2)(x)
+        x4 = self.dense4(c3)
+        c4 = torch.cat([c3, x4], dim=1)
 
-    x = Flatten()(x)
-    outputs = Dense(units=1, activation='sigmoid')(x)
-    model = Model(inputs=inputs, outputs=outputs, name='PatchGAN')
-    # model.summary()
+        x5 = self.dense5(c4)
+        c5 = torch.cat([c4, x5], dim=1)
 
-    # discriminator
-    inputs = Input(shape=image_shape)
+        x6 = self.dense6(c5)
+        c6 = torch.cat([c5, x6], dim=1)
 
-    list_row_idx = [(i * channel_rate, (i + 1) * channel_rate) for i in
-                    range(int(image_shape[0] / patch_shape[0]))]
-    list_col_idx = [(i * channel_rate, (i + 1) * channel_rate) for i in
-                    range(int(image_shape[1] / patch_shape[1]))]
+        x7 = self.dense7(c6)
+        c7 = torch.cat([c6, x7], dim=1)
 
-    list_patch = []
-    for row_idx in list_row_idx:
-        for col_idx in list_col_idx:
-            x_patch = Lambda(lambda z: z[:, row_idx[0]:row_idx[1], col_idx[0]:col_idx[1], :])(inputs)
-            list_patch.append(x_patch)
+        x8 = self.dense8(c7)
+        c8 = torch.cat([c7, x8], dim=1)
 
-    x = [model(patch) for patch in list_patch]
-    outputs = Average()(x)
-    model = Model(inputs=inputs, outputs=outputs, name='Discriminator')
-    return model
+        x9 = self.dense9(c8)
+        c9 = torch.cat([c8, x9], dim=1)
+
+        x10 = self.dense10(c9)
+        c10 = torch.cat([c9, x10], dim=1)
+
+        # Tail
+        x = self.tail_leaky(c10)
+        x = self.tail_conv1(x)
+        x = self.tail_bn(x)
+
+        # Global Skip Connection
+        x = torch.cat([h, x], dim=1)
+        x = self.final_conv(x)
+        x = self.final_leaky(x)
+
+        # Output
+        x = self.output_conv(x)
+        return torch.tanh(x)
 
 
-def generator_containing_discriminator(generator, discriminator):
-    inputs = Input(shape=image_shape)
-    generated_image = generator(inputs)
-    outputs = discriminator(generated_image)
-    model = Model(inputs=inputs, outputs=outputs)
-    return model
+class PatchDiscriminator(nn.Module):
+    def __init__(self):
+        super(PatchDiscriminator, self).__init__()
+
+        def discriminator_block(in_filters, out_filters, stride=2, normalize=True):
+            layers = [nn.Conv2d(in_filters, out_filters, 3, stride=stride, padding=1)]
+            if normalize:
+                layers.append(nn.BatchNorm2d(out_filters))
+            layers.append(nn.LeakyReLU(0.2))
+            return layers
+
+        self.model = nn.Sequential(
+            *discriminator_block(3, channel_rate, normalize=False),
+            *discriminator_block(channel_rate, 2 * channel_rate),
+            *discriminator_block(2 * channel_rate, 4 * channel_rate),
+            *discriminator_block(4 * channel_rate, 4 * channel_rate),
+            nn.Flatten(),
+            nn.Linear(4 * channel_rate * (patch_shape[0] // 16) * (patch_shape[1] // 16), 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class Discriminator(nn.Module):
+    def __init__(self):
+        super(Discriminator, self).__init__()
+        self.patch_discriminator = PatchDiscriminator()
+
+    def extract_patches(self, x):
+        B, C, H, W = x.shape
+        patches = []
+        for i in range(0, H - patch_shape[0] + 1, patch_shape[0]):
+            for j in range(0, W - patch_shape[1] + 1, patch_shape[1]):
+                patch = x[:, :, i:i + patch_shape[0], j:j + patch_shape[1]]
+                patches.append(patch)
+        return patches
+
+    def forward(self, x):
+        # Split image into patches
+        patches = self.extract_patches(x)
+
+        # Process each patch
+        outputs = []
+        for patch in patches:
+            outputs.append(self.patch_discriminator(patch))
+
+        # Average the outputs
+        return torch.mean(torch.stack(outputs, dim=1), dim=1)
+
+
+def print_network(net, name):
+    """Print the network architecture."""
+    num_params = 0
+    for param in net.parameters():
+        num_params += param.numel()
+    print(f'Network [{name}]')
+    print(net)
+    print(f'Total number of parameters: {num_params:,}')
 
 
 if __name__ == '__main__':
-    g = generator_model()
-    g.summary()
-    d = discriminator_model()
-    d.summary()
-    plot_model(d)
-    m = generator_containing_discriminator(generator_model(), discriminator_model())
-    m.summary()
+    # Test the models
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # Initialize models
+    generator = Generator().to(device)
+    discriminator = Discriminator().to(device)
+
+    # Print model architectures
+    print_network(generator, 'Generator')
+    print('\n' + '=' * 50 + '\n')
+    print_network(discriminator, 'Discriminator')
+
+    # Test forward pass
+    test_input = torch.randn(1, 3, 256, 256).to(device)
+    gen_output = generator(test_input)
+    disc_output = discriminator(test_input)
+
+    print(f'\nGenerator output shape: {gen_output.shape}')
+    print(f'Discriminator output shape: {disc_output.shape}')
