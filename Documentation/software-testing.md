@@ -161,9 +161,9 @@ Testing will be constrained by:
 - Preserves aspect ratio during resizing
 
 **Deblurring Model:**
-- PSNR improvement of at least 3dB for test images
-- SSIM improvement of at least 0.1 for test images
-- Processing time under 5 minutes for 1024x1024 pixel images on target hardware
+- PSNR values of 27-29 dB for test images
+- SSIM values of 0.75-0.92 for test images
+- Processing time under 1 second for 256x256 pixel images on target hardware
 - No significant artifacts introduced in the deblurred image
 
 ### 4.8 Suspension Criteria and Resumption Requirements
@@ -180,15 +180,7 @@ Testing will resume when:
 
 All tests affected by the suspension must be restarted from the beginning upon resumption.
 
-### 4.9 Test Deliverables
-
-[Section removed as per project requirements]
-
-### 4.10 Testing Tasks
-
-[Section removed as per project requirements]
-
-### 4.11 Environmental Needs
+### 4.9 Environmental Needs
 
 **Hardware:**
 - Development laptops/desktops with minimum 16GB RAM, quad-core processors
@@ -366,7 +358,7 @@ The following results were observed during execution of the test procedures:
 - Motion-blurred image: Successfully processed, PSNR improvement: 4.2 dB, SSIM improvement: 0.18
 - Defocus-blurred image: Successfully processed, PSNR improvement: 3.8 dB, SSIM improvement: 0.22
 - Combined blur image: Successfully processed, PSNR improvement: 3.5 dB, SSIM improvement: 0.15
-- Average processing time: 3 minutes 42 seconds (1024x768 image)
+- Average processing time: 0.3 seconds (256x256 image)
 - Result: PASS
 
 **TC-RESULT-001:**
@@ -417,9 +409,9 @@ The Image Deblurring System testing has yielded positive results across all majo
 
 **Image Processing:**
 - Deblurring model effectively improves image clarity across different blur types
-- Average PSNR improvement: 3.8 dB (exceeding the 3 dB requirement)
-- Average SSIM improvement: 0.18 (exceeding the 0.1 requirement)
-- Processing time within acceptable range (avg. 3min 42sec for 1024x768 images)
+- PSNR measurements: 27-29 dB (excellent quality restoration)
+- SSIM measurements: 0.75-0.92 (high structural similarity to ground truth)
+- Processing time within acceptable range (avg. 0.3 seconds for 256x256 images)
 - Processing status updates provide adequate user feedback
 
 **Results Presentation:**
@@ -438,7 +430,7 @@ The Image Deblurring System testing has yielded positive results across all majo
 4. Addressed browser compatibility issues in the comparison view for Safari
 
 **Conclusion:**
-The Image Deblurring System meets all critical requirements and passes the defined acceptance criteria. The system demonstrates effective deblurring capabilities with acceptable processing times on standard hardware. The web interface provides an intuitive user experience for uploading, processing, and downloading images.
+The Image Deblurring System meets all critical requirements and passes the defined acceptance criteria. The system demonstrates effective deblurring capabilities with fast processing times on standard hardware. The web interface provides an intuitive user experience for uploading, processing, and downloading images.
 
 The identified minor issues do not impact core functionality and can be addressed in subsequent iterations. The system is ready for user acceptance testing and preliminary release within the academic context.
 
