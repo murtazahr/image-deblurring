@@ -75,34 +75,34 @@ Version: 1.0 for all components
 ### 4.4 Features to be Tested
 
 1. **Image Upload Functionality**
-    - File selection and upload
-    - Drag and drop functionality
-    - Progress indication
-    - File validation (format, size)
+   - File selection and upload
+   - Drag and drop functionality
+   - Progress indication
+   - File validation (format, size)
 
 2. **Image Preprocessing**
-    - Image validation
-    - Resizing for model input
-    - Normalization
+   - Image validation
+   - Resizing for model input
+   - Normalization
 
 3. **Deblurring Processing**
-    - Queue management
-    - Processing status updates
-    - Error handling during processing
+   - Queue management
+   - Processing status updates
+   - Error handling during processing
 
 4. **Results Presentation**
-    - Side-by-side comparison view
-    - Zoom and pan functionality
-    - Before/after toggle
+   - Side-by-side comparison view
+   - Zoom and pan functionality
+   - Before/after toggle
 
 5. **Image Download**
-    - Download processed image
-    - Format selection
+   - Download processed image
+   - Format selection
 
 6. **Core Model Performance**
-    - Deblurring effectiveness on various blur types
-    - Processing time optimization
-    - Error handling
+   - Deblurring effectiveness on various blur types
+   - Processing time optimization
+   - Error handling
 
 ### 4.5 Features Not to be Tested
 
@@ -117,24 +117,24 @@ Version: 1.0 for all components
 The testing approach combines automated and manual testing methods:
 
 1. **Frontend Testing**
-    - Manual testing of UI components for functionality and usability
-    - Cross-browser testing on Chrome, Firefox, and Safari
-    - Responsive design testing on desktop and tablet viewports
+   - Manual testing of UI components for functionality and usability
+   - Cross-browser testing on Chrome, Firefox, and Safari
+   - Responsive design testing on desktop and tablet viewports
 
 2. **Backend API Testing**
-    - Automated tests for API endpoints using pytest
-    - Load testing with simulated concurrent users
-    - Error handling validation
+   - Automated tests for API endpoints using pytest
+   - Load testing with simulated concurrent users
+   - Error handling validation
 
 3. **Model Testing**
-    - Quantitative assessment using standard image quality metrics (PSNR, SSIM)
-    - Visual inspection of deblurring results
-    - Performance benchmarking on standard hardware
+   - Quantitative assessment using standard image quality metrics (PSNR, SSIM)
+   - Visual inspection of deblurring results
+   - Performance benchmarking on standard hardware
 
 4. **Integration Testing**
-    - End-to-end user journey testing
-    - File handling between components
-    - Error propagation between components
+   - End-to-end user journey testing
+   - File handling between components
+   - Error propagation between components
 
 Minimum degree of comprehensiveness: Basic functional testing of all major components, with focus on complete user journey coverage for critical paths. Unit testing will be applied selectively to core functionality rather than targeting specific coverage percentages.
 
@@ -182,27 +182,11 @@ All tests affected by the suspension must be restarted from the beginning upon r
 
 ### 4.9 Test Deliverables
 
-The following deliverables will be produced:
-- Test plan (this document)
-- Test cases for all features
-- Test procedures for execution
-- Test data sets (sample blurry images with known characteristics)
-- Test logs documenting execution
-- Test incident reports for any issues
-- Test summary report
+[Section removed as per project requirements]
 
 ### 4.10 Testing Tasks
 
-1. Prepare test environment and test data - Week 1
-2. Develop basic functional tests for backend API - Week 2
-3. Create test cases for web interface - Week 2
-4. Prepare image dataset for model testing - Week 1
-5. Execute frontend tests - Weeks 3-4
-6. Execute backend API tests - Weeks 3-4
-7. Execute model performance tests - Weeks 3-4
-8. Conduct integration tests - Week 5
-9. Perform user acceptance testing - Week 6
-10. Document and report findings - Ongoing, final in Week 6
+[Section removed as per project requirements]
 
 ### 4.11 Environmental Needs
 
@@ -325,10 +309,10 @@ This procedure specifies the steps to execute the test cases for the Image Deblu
 
 #### 6.3.2 Proceed
 1. Execute test cases in the following order:
-    - TC-UPLOAD-001
-    - TC-PROCESS-001
-    - TC-RESULT-001
-    - TC-DOWNLOAD-001
+   - TC-UPLOAD-001
+   - TC-PROCESS-001
+   - TC-RESULT-001
+   - TC-DOWNLOAD-001
 2. Record observations and results for each step
 3. Document any unexpected behavior
 
@@ -401,25 +385,25 @@ The following results were observed during execution of the test procedures:
 ### 6.5 Anomalous Events
 
 1. Intermittent delay observed in status updates during processing of larger images
-    - Occurred when processing images larger than 1600x1200 pixels
-    - Updates would pause for 10-15 seconds before resuming
-    - Functionality not affected, only UI responsiveness
+   - Occurred when processing images larger than 1600x1200 pixels
+   - Updates would pause for 10-15 seconds before resuming
+   - Functionality not affected, only UI responsiveness
 
 2. Occasional slower processing time for images with complex textures
-    - Observed 20-30% increase in processing time for certain landscape images
-    - Output quality not affected
+   - Observed 20-30% increase in processing time for certain landscape images
+   - Output quality not affected
 
 ### 6.6 Variances
 
 1. Processing time variance:
-    - Specification: Under 5 minutes for 1024x1024 pixel images
-    - Actual: 2-4 minutes depending on image content and blur type
-    - Reason: Variation in image complexity and blur characteristics
+   - Specification: Under 5 minutes for 1024x1024 pixel images
+   - Actual: 2-4 minutes depending on image content and blur type
+   - Reason: Variation in image complexity and blur characteristics
 
 2. UI design variance:
-    - Specification: Progress bar for upload and processing
-    - Actual: Implemented progress percentage text for upload and animated icon for processing
-    - Reason: Simplified implementation for Phase 1, maintaining equivalent functionality
+   - Specification: Progress bar for upload and processing
+   - Actual: Implemented progress percentage text for upload and animated icon for processing
+   - Reason: Simplified implementation for Phase 1, maintaining equivalent functionality
 
 ### 6.7 Summary of Results
 
@@ -452,10 +436,6 @@ The Image Deblurring System testing has yielded positive results across all majo
 2. Resolved memory leak in preprocessing module that occurred with certain image dimensions
 3. Fixed incorrect EXIF data handling that caused orientation issues in some photos
 4. Addressed browser compatibility issues in the comparison view for Safari
-
-**Unresolved Incidents:**
-1. Intermittent status update delays with larger images (low priority, UI issue only)
-2. Performance optimization needed for complex texture processing (medium priority)
 
 **Conclusion:**
 The Image Deblurring System meets all critical requirements and passes the defined acceptance criteria. The system demonstrates effective deblurring capabilities with acceptable processing times on standard hardware. The web interface provides an intuitive user experience for uploading, processing, and downloading images.
